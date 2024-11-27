@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}
+    Market Page
+{% endblock %}
+
+{% block content %}
+      <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <!-- Your Columns HERE -->
+                <th scope="col">Saat</th>
+                <th scope="col">Tarih</th>
+                <th scope="col">Hayvan No</th>
+                <th scope="col">Hekim No</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Your rows inside the table HERE: -->
+            {%for randevu in randevular%}
+            <tr>
+                <td>{{ randevu.saat }}</td>
+                <td>{{ randevu.tarih }}</td>
+                <td>{{ randevu.hayvan_no }}</td>
+                <td>{{ randevu.hekim_no }}</td>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+    
+{% endblock %}

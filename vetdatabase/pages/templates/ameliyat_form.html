@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}
+    Ameliyat Ekle
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Ameliyat Ekle</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.tarih.label }}<br>
+            {{ form.tarih(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.saat.label }}<br>
+            {{ form.saat(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.aciklama.label }}<br>
+            {{ form.aciklama(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Ameliyat Ekle</button>
+    </form>
+</div>
+{% endblock %}
