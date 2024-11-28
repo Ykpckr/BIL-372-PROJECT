@@ -12,8 +12,8 @@
                 <tr>
                     <th scope="col">Tarih</th>
                     <th scope="col">Saat</th>
-                    <th scope="col">Hayvan No</th>
-                    <th scope="col">Hekim No</th>
+                    <th scope="col">Hayvan Adı</th>
+                    <th scope="col">Hekim Adı</th>
                     <th scope="col">Açıklama</th>
                 </tr>
             </thead>
@@ -22,8 +22,8 @@
                 <tr>
                     <td>{{ ameliyat.tarih }}</td>
                     <td>{{ ameliyat.saat }}</td>
-                    <td>{{ ameliyat.hayvan_no }}</td>
-                    <td>{{ ameliyat.hekim_no }}</td>
+                    <td>{{ ameliyat.hayvan_adi }}</td>
+                    <td>{{ ameliyat.hekim_adi }} {{ ameliyat.hekim_soyadi }}</td>
                     <td>{{ ameliyat.aciklama }}</td>
                 </tr>
                 {% endfor %}
