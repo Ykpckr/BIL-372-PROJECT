@@ -108,7 +108,7 @@ class Randevu(db.Model,UserMixin):
     saat = db.Column(db.String(length=5),nullable=False)
     hayvan_no = db.Column(db.String(length=12),db.ForeignKey('hayvan.hnum'),primary_key = True)
     hekim_no = db.Column(db.String(length=12), db.ForeignKey('hekim.num') ,primary_key = True)
-    
+    notes = db.Column(db.String(length=255), nullable=True)
     
 
 
@@ -116,7 +116,7 @@ class Randevu(db.Model,UserMixin):
 class Ameliyat(db.Model):
     __tablename__ = 'ameliyat'
     tarih = db.Column(db.Date, nullable=False, primary_key=True)
-    saat = db.Column(Time, nullable=False, primary_key=True)
+    saat = db.Column(db.String(length=5),nullable=False)
     hayvan_no = db.Column(db.Integer, nullable=False, primary_key=True)
     hekim_no = db.Column(db.Integer, nullable=False, primary_key=True)
     aciklama = db.Column(db.String(255), nullable=True)
@@ -140,7 +140,7 @@ class Stajyer(db.Model, UserMixin):
 class BAGLIDIR(db.Model):
     __tablename__ = 'baglidir'
     HekimNo = db.Column(db.Integer, db.ForeignKey('hekim.num', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
-    StajerNo = db.Column(db.Integer, db.ForeignKey('stajyer.num', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
+    StajyerNo = db.Column(db.Integer, db.ForeignKey('stajyer.num', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
 
     # Relationships (optional)
     hekim = db.relationship('Hekim', backref='stajyer_baglantilari', lazy=True)
