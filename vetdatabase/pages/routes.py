@@ -43,10 +43,17 @@ def randevu_durumu():
     hayvanlar = Hayvan.query.filter_by(sahip_tc=current_user.tc).all()
     hayvan_nolar = [hayvan.hnum for hayvan in hayvanlar]
 
-    # Bu hayvanlarla ilgili ameliyat bilgilerini getir
-    ameliyatlar = Ameliyat.query.filter(Ameliyat.hayvan_no.in_(hayvan_nolar)).all()
+    # Bu hayvanlarla ilgili ameliyat bilgilerini getirirken hayvan ve hekim bilgilerini de ekle
+    ameliyatlar = db.session.execute("""
+        SELECT a.tarih, a.saat, h.isim AS hayvan_adi, k.isim AS hekim_adi, k.soyisim AS hekim_soyadi, a.aciklama
+        FROM ameliyat AS a
+        JOIN hayvan AS h ON a.Hayvan_no = h.hnum
+        JOIN hekim AS k ON a.Hekim_no = k.num
+        WHERE a.hayvan_no IN :hayvan_nolar
+    """, {'hayvan_nolar': tuple(hayvan_nolar)}).fetchall()
 
     return render_template('randevu_durumu.html', ameliyatlar=ameliyatlar)
+
 
 
 
@@ -150,8 +157,13 @@ def animal_page():
     form = AnimalForm()
     if form.validate_on_submit():
         query = "select h1.hnum + 1 as start from hayvan as h1 left outer join hayvan as h2 on h1.hnum + 1 = h2.hnum where h2.hnum is null"
-        hnum = str(db.engine.execute(query).fetchone())
-        hnum = hnum[1:-2]
+        result = db.engine.execute(query).fetchone()
+        if result and result[0]:
+            hnum = str(result[0])
+        else:
+            # Eğer hiç hayvan yoksa, başlangıç olarak '1' verin
+            hnum = '1'
+
         if isinstance(form.yas.data, int):
             insert = 'insert into hayvan values(\'{hnum}\',\'{owner}\',\'{name}\',\'{tur}\',{yas})'.format(
                                                                     hnum=hnum,
@@ -166,33 +178,54 @@ def animal_page():
             flash('Ekleme sirasinda bir hata olustu. Lutfen tekrar dene',
                   category='danger')
             return render_template('hayvan.html', form=form)
-    else:
-        flash('Ekleme sirasinda bir hata olustu. Lutfen tekrar dene',
-                  category='danger')
-    return render_template('hayvan.html', form=form)    
+    return render_template('hayvan.html', form=form)
 
 @app.route('/randevu/al', methods=['GET', 'POST'])
 @login_required
 def randevu_page():
-    form = AppointmentForm()    
-    if form.validate_on_submit():    
-        insert = 'insert into randevu values(\'{date}\',\'{saat}\',\'{hayvanlar}\',\'{hekimler}\')'.format(
-                                                                    date = form.tarih.data,
-                                                                    saat=form.saat.data,
-                                                                    hayvanlar=form.hayvanlar.data,
-                                                                    hekimler=form.hekimler.data)
-        
-        db.engine.execute(insert)
-        db.session.commit()
-        return redirect(url_for("market_page"))
-    else:
-        return render_template('al.html', form=form)   
+    form = AppointmentForm()
+    kullanici_hayvanlari = db.engine.execute(
+        "SELECT hnum, isim FROM hayvan WHERE sahip_tc = '{}'".format(current_user.tc)
+    ).fetchall()
+
+    # Hayvanların hnum ve isimlerini SelectField'in choices kısmına ekle
+    form.hayvanlar.choices = [(hayvan.hnum, hayvan.isim) for hayvan in kullanici_hayvanlari]
+
+    mevcut_hekimler = db.engine.execute("SELECT num, isim, soyisim FROM hekim").fetchall()
+
+    # Hekimlerin id ve isimlerini SelectField'in choices kısmına ekle
+    form.hekimler.choices = [(hekim.num, f"{hekim.isim} {hekim.soyisim}") for hekim in mevcut_hekimler]
+
+
+    if form.validate_on_submit():
+        try:
+            # notlar sütununa boş bir string ekliyoruz
+            insert = """
+                INSERT INTO randevu (tarih, saat, hayvan_no, hekim_no, notes)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            db.engine.execute(insert, (form.tarih.data, form.saat.data, form.hayvanlar.data, form.hekimler.data, ''))
+            db.session.commit()
+            flash('Randevu başarıyla alındı!', category='success')
+            return redirect(url_for("market_page"))
+        except Exception as e:
+            flash(f'Randevu eklenirken bir hata oluştu: {e}', category='danger')
+
+    return render_template('al.html', form=form)
+
 
 @app.route('/randevu/eski')
 @login_required
 def eski_page():
-    randevular = Randevu.query.filter_by()
-    return render_template('eski.html',randevular = randevular) 
+    randevular = db.session.execute("""
+            SELECT r.saat, r.tarih, h.isim AS hayvan_adi, k.isim AS hekim_adi, k.soyisim AS hekim_soyadi
+            FROM randevu AS r
+            JOIN hayvan AS h ON r.Hayvan_no = h.hnum
+            JOIN hekim AS k ON r.Hekim_no = k.num
+            WHERE h.sahip_tc = :owner_tc
+        """, {'owner_tc': current_user.tc}).fetchall()
+
+    return render_template('eski.html', randevular=randevular)
 
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -314,7 +347,7 @@ def baglidir_add(stajyer_no):
         return redirect(url_for('admin_page'))
 
     # Check if the stajyer is already linked to any hekim
-    existing_link = BAGLIDIR.query.filter_by(StajerNo=stajyer_no).first()
+    existing_link = BAGLIDIR.query.filter_by(StajyerNo=stajyer_no).first()
     if existing_link:
         # Check if the stajyer is linked to the current user
         if existing_link.HekimNo == current_user.num:
@@ -324,7 +357,7 @@ def baglidir_add(stajyer_no):
         return redirect(url_for('admin_page'))
 
     # Add the relationship
-    new_link = BAGLIDIR(HekimNo=current_user.num, StajerNo=stajyer_no)
+    new_link = BAGLIDIR(HekimNo=current_user.num, StajyerNo=stajyer_no)
     db.session.add(new_link)
     db.session.commit()
     flash('Stajyer başarıyla hekime bağlandı!', category='success')
