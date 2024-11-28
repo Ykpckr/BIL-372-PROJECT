@@ -39,9 +39,13 @@ class AnimalForm(FlaskForm):
     
 class AppointmentForm(FlaskForm):
     tarih = DateField(label="Tarih&Saat:", validators=[DataRequired()])
-    saat = StringField(label="Saat:", validators=[DataRequired()])
-    hayvanlar = StringField(label="Hayvanlar", validators=[DataRequired()])
-    hekimler = StringField(label="Hekimler", validators=[DataRequired()])
+    saat = SelectField(label="Saat:", validators=[DataRequired()], choices=[
+        ('09:00', '09:00'), ('10:00', '10:00'), ('11:00', '11:00'),
+        ('12:00', '12:00'), ('13:00', '13:00'), ('14:00', '14:00'),
+        ('15:00', '15:00'), ('16:00', '16:00'), ('17:00', '17:00')
+    ])
+    hayvanlar = SelectField(label="Hayvanlar", validators=[DataRequired()])
+    hekimler = SelectField(label="Hekimler", validators=[DataRequired()])
     submit = SubmitField(label='Randevu Ekle')   
     
 class HekimForm(FlaskForm):
@@ -60,7 +64,11 @@ class HekimLoginForm(FlaskForm):
 
 class AmeliyatForm(FlaskForm):
     tarih = DateField('Tarih', validators=[DataRequired()])
-    saat = TimeField('Saat', validators=[DataRequired()])
+    saat = SelectField(label="Saat:", validators=[DataRequired()], choices=[
+        ('09:00', '09:00'), ('10:00', '10:00'), ('11:00', '11:00'),
+        ('12:00', '12:00'), ('13:00', '13:00'), ('14:00', '14:00'),
+        ('15:00', '15:00'), ('16:00', '16:00'), ('17:00', '17:00')
+    ])
     aciklama = StringField('Açıklama', validators=[DataRequired()])
     submit = SubmitField('Ameliyat Ekle')
 
