@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}
+    Eski Randevular
+{% endblock %}
+
+{% block content %}
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <th scope="col">Saat</th>
+                <th scope="col">Tarih</th>
+                <th scope="col">Hayvan Adı</th>
+                <th scope="col">Hekim Adı</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for randevu in randevular %}
+            <tr>
+                <td>{{ randevu.saat }}</td>
+                <td>{{ randevu.tarih }}</td>
+                <td>{{ randevu.hayvan_adi }}</td>
+                <td>{{ randevu.hekim_adi }} {{ randevu.hekim_soyadi }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

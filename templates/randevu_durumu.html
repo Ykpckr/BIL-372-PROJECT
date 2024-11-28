@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}
+    Randevu Durumu
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Randevu Durumu</h2>
+    {% if ameliyatlar %}
+        <table class="table table-hover table-dark">
+            <thead>
+                <tr>
+                    <th scope="col">Tarih</th>
+                    <th scope="col">Saat</th>
+                    <th scope="col">Hayvan Adı</th>
+                    <th scope="col">Hekim Adı</th>
+                    <th scope="col">Açıklama</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ameliyat in ameliyatlar %}
+                <tr>
+                    <td>{{ ameliyat.tarih }}</td>
+                    <td>{{ ameliyat.saat }}</td>
+                    <td>{{ ameliyat.hayvan_adi }}</td>
+                    <td>{{ ameliyat.hekim_adi }} {{ ameliyat.hekim_soyadi }}</td>
+                    <td>{{ ameliyat.aciklama }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Henüz hiçbir hayvanınıza ameliyat işlemi yapılmamış.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}
+    Hekim Randevuları
+{% endblock %}
+
+{% block content %}
+<h2>Hekim Randevuları</h2>
+<table class="table table-hover table-dark">
+    <thead>
+        <tr>
+            <th scope="col">Tarih</th>
+            <th scope="col">Saat</th>
+            <th scope="col">Hayvan No</th>
+            <th scope="col">Ameliyat</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for randevu in randevular %}
+        <tr>
+            <td>{{ randevu.tarih }}</td>
+            <td>{{ randevu.saat }}</td>
+            <td>{{ randevu.hayvan_no }}</td>
+			<td>
+				<a href="{{ url_for('ameliyat_ekle', hayvan_no=randevu.hayvan_no, hekim_no=randevu.hekim_no) }}" class="btn btn-primary">Ameliyat Yap</a>
+			</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
