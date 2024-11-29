@@ -1,32 +1,39 @@
 {% extends 'base.html' %}
 {% block title %}
-    Yeni Stajyer Ekle
+    Stajyer Ekleme Sayfası
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Yeni Stajyer Ekle</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <div class="form-group">
-            {{ form.isim.label }}
-            {{ form.isim(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.soyisim.label }}
-            {{ form.soyisim(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.email.label }}
-            {{ form.email(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.sifre.label }}
-            {{ form.sifre(class="form-control") }}
-        </div>
-        <div class="form-group">
-            {{ form.submit(class="btn btn-primary") }}
-        </div>
-    </form>
-</div>
+<body class="text-center">
+    <div class="container">
+        <form method="POST" class="form-login" style="color:white">
+            {{ form.hidden_tag() }}
+           <br> </br>
+            <img class="mb-4" src="https://i.hizliresim.com/rrbq0q1.png" alt="">
+            <h1 class="h3 mb-3 font-weight-normal">
+                Yeni Stajyer Bilgilerini Giriniz:
+            </h1>
+            <br>
+            {{ form.isim.label() }}
+            {{ form.isim(class="form-control", placeholder="İsim") }}
+
+            {{ form.soyisim.label() }}
+            {{ form.soyisim(class="form-control", placeholder="Soyisim") }}
+
+            {{ form.email.label() }}
+            {{ form.email(class="form-control", placeholder="Email") }}
+
+            {{ form.sifre.label() }}
+            {{ form.sifre(class="form-control", placeholder="Şifre") }}
+
+            {{ form.sifre2.label() }}
+            {{ form.sifre2(class="form-control", placeholder="Şifre Yeniden") }}
+
+            </br>
+
+            {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
+
+        </form>
+    </div>
+</body>
 {% endblock %}
