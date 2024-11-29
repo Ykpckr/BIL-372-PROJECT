@@ -108,7 +108,7 @@ class Randevu(db.Model,UserMixin):
     saat = db.Column(db.String(length=5),nullable=False)
     hayvan_no = db.Column(db.String(length=12),db.ForeignKey('hayvan.hnum'),primary_key = True)
     hekim_no = db.Column(db.String(length=12), db.ForeignKey('hekim.num') ,primary_key = True)
-    notes = db.Column(db.String(length=255), nullable=True)
+    
     
 
 
@@ -140,12 +140,30 @@ class Stajyer(db.Model, UserMixin):
 class BAGLIDIR(db.Model):
     __tablename__ = 'baglidir'
     HekimNo = db.Column(db.Integer, db.ForeignKey('hekim.num', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
-    StajyerNo = db.Column(db.Integer, db.ForeignKey('stajyer.num', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
+    StajerNo = db.Column(db.Integer, db.ForeignKey('stajyer.num', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
 
     # Relationships (optional)
     hekim = db.relationship('Hekim', backref='stajyer_baglantilari', lazy=True)
     stajyer = db.relationship('Stajyer', backref='hekim_baglantilari', lazy=True)
 
 
+class RECETE(db.Model):
+    __tablename__ = 'recete'
+    id = db.Column(db.Integer, primary_key=True)
+    hayvan_no = db.Column(db.Integer, nullable=False)
+    hekim_no = db.Column(db.String(12), db.ForeignKey('hekim.num'), nullable=False)
+    stajyer_no = db.Column(db.Integer, db.ForeignKey('stajyer.num'), nullable=True)
+    tarih = db.Column(db.Date, nullable=False)
+    medications = db.Column(db.JSON, nullable=False)
+    status = db.Column(db.String(10), default='pending', nullable=False)
 
-    
+    def __repr__(self):
+        return f"<Recete {self.id}>"
+
+
+class TIBBI_GECMIS(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    hayvan_no = db.Column(db.Integer, db.ForeignKey('hayvan.hnum'), nullable=False)
+    diagnosis = db.Column(db.Text, nullable=True)
+    treatment = db.Column(db.Text, nullable=True)
+    visit_date = db.Column(db.Date, nullable=True)
