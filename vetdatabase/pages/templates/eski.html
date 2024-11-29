@@ -4,9 +4,10 @@
 {% endblock %}
 
 {% block content %}
-    <table class="table table-hover table-dark">
+      <table class="table table-hover table-dark">
         <thead>
             <tr>
+                
                 <th scope="col">Saat</th>
                 <th scope="col">Tarih</th>
                 <th scope="col">Hayvan Adı</th>
@@ -14,14 +15,20 @@
             </tr>
         </thead>
         <tbody>
-            {% for randevu in randevular %}
+            
+            {%for randevu in randevular%}
             <tr>
                 <td>{{ randevu.saat }}</td>
                 <td>{{ randevu.tarih }}</td>
-                <td>{{ randevu.hayvan_adi }}</td>
-                <td>{{ randevu.hekim_adi }} {{ randevu.hekim_soyadi }}</td>
+                <td>
+                    <a href="{{ url_for('hayvan_detay', hayvan_no=randevu.hayvan_no) }}">
+                        {{ randevu.hayvan_adi }}
+                    </a>
+                </td>
+                <td>{{ randevu.hekim_adi}} {{ randevu.hekim_soyisim}}</td>
             </tr>
-            {% endfor %}
+            {%endfor%}
         </tbody>
     </table>
+    
 {% endblock %}
