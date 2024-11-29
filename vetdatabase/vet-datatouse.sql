@@ -488,7 +488,7 @@ INSERT INTO `TIBBI_GECMIS` (`id`, `hayvan_no`, `diagnosis`, `treatment`, `visit_
 INSERT INTO `TIBBI_GECMIS` (`id`, `hayvan_no`, `diagnosis`, `treatment`, `visit_date`) VALUES (50099, 16475, 'Quis et et non molestiae. Laborum facere ratione et ratione voluptatibus excepturi.', 'Ut.', '2022-12-25');
 INSERT INTO `TIBBI_GECMIS` (`id`, `hayvan_no`, `diagnosis`, `treatment`, `visit_date`) VALUES (50100, 21780, 'Aspernatur rerum minima aliquam tempore ut. Aperiam quo eius minus dolorem.', 'Maxime.', '1972-09-09');
 
-Veritabanı
+# Veritabanı
 
 ALTER TABLE Stajer RENAME TO Stajyer;
 ALTER TABLE Ameliyat ADD açıklama VARCHAR(255);
