@@ -12,8 +12,8 @@
                 <tr>
                     <th scope="col">Tarih</th>
                     <th scope="col">Saat</th>
-                    <th scope="col">Hayvan No</th>
-                    <th scope="col">Hekim No</th>
+                    <th scope="col">Hayvan Adı</th>
+                    <th scope="col">Hekim Adı</th>
                 </tr>
             </thead>
             <tbody>
@@ -21,8 +21,15 @@
                 <tr>
                     <td>{{ randevu.tarih }}</td>
                     <td>{{ randevu.saat }}</td>
-                    <td>{{ randevu.hayvan_no }}</td>
-                    <td>{{ randevu.hekim_no }}</td>
+                    <td>
+                        <a href="{{ url_for('hayvan_detay', hayvan_no=randevu.hayvan_no) }}">
+                            {{ randevu.hayvan_adi }}
+                        </a>
+                    </td>
+                    <td>{{ randevu.hekim_adi }}</td>
+					<td>
+                    <a href="{{ url_for('recete_ekle_stajyer', hayvan_no=randevu.hayvan_no, hekim_no=randevu.hekim_no) }}" class="btn btn-primary">Recete Ekle</a>
+					</td>
                 </tr>
                 {% endfor %}
             </tbody>
