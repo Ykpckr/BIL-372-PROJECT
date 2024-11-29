@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}
-    Market Page
+    Appointment Page
 {% endblock %}
 
 {% block content %}
@@ -23,7 +23,13 @@
                 <td>{{ current_user.isim }}</td>
                 <td>{{ current_user.soyisim }}</td>
                 <td>{{ current_user.email_address }}</td>
-                <td>{{ current_user.hayvan}}</td>
+                <td>
+				{% for hayvan in hayvanlar %}
+				<a href="{{ url_for('hayvan_detay', hayvan_no=hayvan.hnum) }}" class="btn btn-link">
+					{{ hayvan.isim }}
+				</a><br>
+				{% endfor %}
+				</td>
                 <td>
                     <a href="http://127.0.0.1:5000/randevu/eski" class="btn btn-outline btn-danger" role="button" aria-pressed="true">Onceki Randevular</a>
                     <a href="http://127.0.0.1:5000/randevu/hayvan" class="btn btn-outline btn-primary" role="button" aria-pressed="true">Yeni Hayvan Ekle</a>
