@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Bekleyen Reçeteler{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Bekleyen Reçeteler</h2>
+    {% if receteler %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Reçete ID</th>
+                    <th>Hayvan No</th>
+                    <th>Stajyer</th>
+                    <th>Medications</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for recete in receteler %}
+                <tr>
+                    <td>{{ recete.id }}</td>
+                    <td>{{ recete.hayvan_no }}</td>
+                    <td>{{ recete.stajyer_id }}</td>
+                    <td>{{ recete.medications }}</td>
+                    <td>
+                        <a href="{{ url_for('recete_onay', recete_id=recete.id, action='approve') }}" class="btn btn-success">Kabul Et</a>
+                        <a href="{{ url_for('recete_onay', recete_id=recete.id, action='reject') }}" class="btn btn-danger">Reddet</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Bekleyen reçete bulunamadı.</p>
+    {% endif %}
+</div>
+{% endblock %}

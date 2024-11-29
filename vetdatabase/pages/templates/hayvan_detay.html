@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}
+    {{ hayvan.isim }} - Hayvan Detayları
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ hayvan.isim }} - Hayvan Detayları</h2>
+
+    <h3>Genel Bilgiler</h3>
+    <ul>
+        <li><b>Adı:</b> {{ hayvan.isim }}</li>
+        <li><b>Tür:</b> {{ hayvan.tur }}</li>
+        <li><b>Yaş:</b> {{ hayvan.yas }}</li>
+        <li><b>Sahip:</b> {{ sahip.isim }} {{ sahip.soyisim }}</li>
+    </ul>
+
+    <h3>Tıbbi Geçmiş</h3>
+    {% if tibbi_gecmis %}
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <th scope="col">Teşhis</th>
+                <th scope="col">Tedavi</th>
+                <th scope="col">Tarih</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for kayit in tibbi_gecmis %}
+            <tr>
+                <td>{{ kayit.diagnosis }}</td>
+                <td>{{ kayit.treatment }}</td>
+                <td>{{ kayit.visit_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Bu hayvan için tıbbi geçmiş bulunmamaktadır.</p>
+    {% endif %}
+
+    <h3>Ameliyatlar</h3>
+    {% if ameliyatlar %}
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <th scope="col">Tarih</th>
+                <th scope="col">Saat</th>
+				<th scope="col">Açıklama</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ameliyat in ameliyatlar %}
+            <tr>
+                <td>{{ ameliyat.tarih }}</td>
+                <td>{{ ameliyat.saat }}</td>
+				<td>{{ ameliyat.description if ameliyat.description else "Açıklama yok" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Bu hayvan için ameliyat bulunmamaktadır.</p>
+    {% endif %}
+
+    <h3>Reçeteler</h3>
+    {% if receteler %}
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <th scope="col">Tarih</th>
+                <th scope="col">İlaçlar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for recete in receteler %}
+            <tr>
+                <td>{{ recete.tarih }}</td>
+                <td>{{ recete.medications }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Bu hayvan için reçete bulunmamaktadır.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Reçete Ekle{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Reçete Ekle</h2>
+    <p>Reçete için ilaç bilgilerini JSON formatında giriniz. Örnek format: <code>{{ example_json }}</code></p>
+    <form method="post">
+        <div class="form-group">
+            <label for="medications">İlaçlar (JSON Formatında):</label>
+            <textarea name="medications" id="medications" class="form-control" rows="5" placeholder='{{ example_json }}'></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Reçete Ekle</button>
+    </form>
+</div>
+{% endblock %}

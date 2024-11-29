@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}
+    Reçete Ekle
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Reçete Ekle</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="medications">Reçete İçeriği (JSON formatında girin)</label>
+            <textarea id="medications" name="medications" class="form-control" rows="5" placeholder='{"ilac1": "Doz1", "ilac2": "Doz2"}'></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Reçete Kaydet</button>
+    </form>
+</div>
+{% endblock %}

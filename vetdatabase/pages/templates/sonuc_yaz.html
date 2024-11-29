@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Sonuç Yaz{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Sonuç Yaz</h2>
+    <form method="POST" action="{{ url_for('sonuc_yaz', hayvan_no=hayvan_no) }}">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.diagnosis.label }}<br>
+            {{ form.diagnosis(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.treatment.label }}<br>
+            {{ form.treatment(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-success") }}
+        </div>
+    </form>
+</div>
+{% endblock %}
