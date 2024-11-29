@@ -1,30 +1,55 @@
 {% extends 'base.html' %}
 {% block title %}
-    Hekim Randevuları
+    Randevu Hekim
 {% endblock %}
 
 {% block content %}
-<h2>Hekim Randevuları</h2>
-<table class="table table-hover table-dark">
-    <thead>
-        <tr>
-            <th scope="col">Tarih</th>
-            <th scope="col">Saat</th>
-            <th scope="col">Hayvan No</th>
-            <th scope="col">Ameliyat</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for randevu in randevular %}
-        <tr>
-            <td>{{ randevu.tarih }}</td>
-            <td>{{ randevu.saat }}</td>
-            <td>{{ randevu.hayvan_no }}</td>
-			<td>
-				<a href="{{ url_for('ameliyat_ekle', hayvan_no=randevu.hayvan_no, hekim_no=randevu.hekim_no) }}" class="btn btn-primary">Ameliyat Yap</a>
-			</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container mt-4">
+    <h2>Hekim Randevuları</h2>
+    <table class="table table-hover table-dark mt-4">
+        <thead>
+            <tr>
+                <th scope="col">Hayvan Adı</th>
+                <th scope="col">Tarih</th>
+                <th scope="col">Saat</th>
+                <th scope="col">Actions</th>
+                <th scope="col">Bekleyen Reçeteler</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for randevu in randevular %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('hayvan_detay', hayvan_no=randevu.hayvan_no) }}">
+                        {{ randevu.hayvan_adi }}
+                    </a>
+                </td>
+                <td>{{ randevu.tarih }}</td>
+                <td>{{ randevu.saat }}</td>
+                <td>
+                    <a href="{{ url_for('ameliyat_ekle', hayvan_no=randevu.hayvan_no, hekim_no=randevu.hekim_no) }}" class="btn btn-success">Ameliyat Ekle</a>
+                    <a href="{{ url_for('recete_ekle', hayvan_no=randevu.hayvan_no, hekim_no=randevu.hekim_no, tarih=randevu.tarih, saat=randevu.saat) }}" class="btn btn-primary">Reçete Ekle</a>
+					 <a href="{{ url_for('sonuc_yaz', hayvan_no=randevu.hayvan_no) }}" class="btn btn-warning">Sonuç Yaz</a>
+                </td>
+                <td>
+                    {% set pending_found = False %}
+                    {% for recete in randevu.receteler %}
+                        {% if recete.status == 'pending' %}
+                            {% set pending_found = True %}
+                            <form method="post" action="{{ url_for('recete_onay', recete_id=recete.id) }}">
+                                <p>{{ recete.medications }}</p>
+                                <button type="submit" name="action" value="approve" class="btn btn-success btn-sm">Kabul Et</button>
+                                <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">Reddet</button>
+                            </form>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not pending_found %}
+                        <p>Bekleyen reçete yok.</p>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
