@@ -1,11 +1,15 @@
+from datetime import datetime, date
 from pages import app
 from flask import render_template, redirect, url_for, flash
 from flask import request
-from pages.models import Sahip, Hekim , Randevu, Ameliyat, Hayvan, Stajyer, BAGLIDIR
-from pages.forms import HekimLoginForm, RegisterForm, LoginForm, AnimalForm, AppointmentForm, HekimForm, AmeliyatForm, StajyerForm
+from pages.models import Sahip, Hekim , Randevu, Ameliyat, Hayvan, Stajyer, BAGLIDIR, RECETE, TIBBI_GECMIS
+from pages.forms import HekimLoginForm, RegisterForm, LoginForm, AnimalForm, AppointmentForm, HekimForm, AmeliyatForm, StajyerForm, ReceteForm, SonucYazForm
 from pages import db
 from flask_login import login_user, logout_user, login_required
 from flask_login import current_user
+import time
+import json
+
 
 @app.route('/')
 @app.route('/home')
@@ -23,36 +27,62 @@ def market_page():
     if isinstance(current_user, Stajyer):
         hekim_nos = get_linked_hekim_numbers(current_user.num)
         randevular = Randevu.query.filter(Randevu.hekim_no.in_(hekim_nos)).all()
+        for randevu in randevular:
+            hayvan = Hayvan.query.filter_by(hnum=randevu.hayvan_no).first()
+            hekim = Hekim.query.filter_by(num=randevu.hekim_no).first()
+            randevu.hayvan_adi = hayvan.isim if hayvan else "Bilinmiyor"
+            randevu.hekim_adi = f"{hekim.isim} {hekim.soyisim}" if hekim else "Bilinmiyor"
         return render_template('randevu_stajyer.html', randevular=randevular)
     elif isinstance(current_user, Hekim):
         # Hekim sees their own randevus
         randevular = Randevu.query.filter_by(hekim_no=current_user.num).all()
+        for randevu in randevular:
+            randevu.receteler = RECETE.query.filter_by(hayvan_no=randevu.hayvan_no, status='pending').all()
+            hayvan = Hayvan.query.filter_by(hnum=randevu.hayvan_no).first()
+            randevu.hayvan_adi = hayvan.isim if hayvan else "Bilinmiyor"
         return render_template('randevu_hekim.html', randevular=randevular)
     else:
         # Default behavior for other users
-        return render_template('randevu.html')
+        hayvanlar = Hayvan.query.filter_by(sahip_tc=current_user.tc).all()
+        return render_template('randevu.html', hayvanlar=hayvanlar)
     
-@app.route('/randevu/durum', methods=['GET'])
+@app.route('/randevu/durumu', methods=['GET'])
 @login_required
 def randevu_durumu():
-    if not isinstance(current_user, Sahip):
-        flash('Bu sayfayı yalnızca hayvan sahipleri görebilir!', category='danger')
-        return redirect(url_for('market_page'))
-
-    # Kullanıcının sahip_tc'sine göre hayvanları bul
+    # Fetch hayvanlar associated with the current user
     hayvanlar = Hayvan.query.filter_by(sahip_tc=current_user.tc).all()
-    hayvan_nolar = [hayvan.hnum for hayvan in hayvanlar]
+    hayvan_nos = [hayvan.hnum for hayvan in hayvanlar]
 
-    # Bu hayvanlarla ilgili ameliyat bilgilerini getirirken hayvan ve hekim bilgilerini de ekle
-    ameliyatlar = db.session.execute("""
-        SELECT a.tarih, a.saat, h.isim AS hayvan_adi, k.isim AS hekim_adi, k.soyisim AS hekim_soyadi, a.aciklama
-        FROM ameliyat AS a
-        JOIN hayvan AS h ON a.Hayvan_no = h.hnum
-        JOIN hekim AS k ON a.Hekim_no = k.num
-        WHERE a.hayvan_no IN :hayvan_nolar
-    """, {'hayvan_nolar': tuple(hayvan_nolar)}).fetchall()
+    # Handle cases where hayvan_nos might be empty
+    if not hayvan_nos:
+        hayvan_nos = [-1]  # Use a placeholder value to prevent SQL errors
 
-    return render_template('randevu_durumu.html', ameliyatlar=ameliyatlar)
+    # Fetch related ameliyatlar and receteler
+    ameliyatlar = Ameliyat.query.filter(Ameliyat.hayvan_no.in_(hayvan_nos)).all()
+    receteler = RECETE.query.filter(RECETE.hayvan_no.in_(hayvan_nos), RECETE.status == 'accepted').all()
+    tibbi_gecmisler = TIBBI_GECMIS.query.filter(TIBBI_GECMIS.hayvan_no.in_(hayvan_nos)).all()
+
+    for ameliyat in ameliyatlar:
+        hayvan = Hayvan.query.filter_by(hnum=ameliyat.hayvan_no).first()
+        hekim = Hekim.query.filter_by(num=ameliyat.hekim_no).first()
+        ameliyat.hayvan_adi = hayvan.isim if hayvan else "Bilinmiyor"
+        ameliyat.hekim_adi = hekim.isim if hekim else "Bilinmiyor"
+        ameliyat.hekim_soyisim = hekim.soyisim if hekim else "Bilinmiyor"
+
+    for recete in receteler:
+        hayvan = Hayvan.query.filter_by(hnum=recete.hayvan_no).first()
+        hekim = Hekim.query.filter_by(num=recete.hekim_no).first()
+        recete.hayvan_adi = hayvan.isim if hayvan else "Bilinmiyor"
+        recete.hekim_adi = hekim.isim if hekim else "Bilinmiyor"
+        recete.hekim_soyisim = hekim.soyisim if hekim else "Bilinmiyor"
+
+    for tibbi in tibbi_gecmisler:
+        hayvan = Hayvan.query.filter_by(hnum=tibbi.hayvan_no).first()
+        tibbi.hayvan_adi = hayvan.isim if hayvan else "Bilinmiyor"
+    
+
+    # Render the template with fetched data
+    return render_template('randevu_durumu.html', ameliyatlar=ameliyatlar, receteler=receteler , tibbi_gecmisler=tibbi_gecmisler)
 
 
 
@@ -163,7 +193,6 @@ def animal_page():
         else:
             # Eğer hiç hayvan yoksa, başlangıç olarak '1' verin
             hnum = '1'
-
         if isinstance(form.yas.data, int):
             insert = 'insert into hayvan values(\'{hnum}\',\'{owner}\',\'{name}\',\'{tur}\',{yas})'.format(
                                                                     hnum=hnum,
@@ -175,41 +204,31 @@ def animal_page():
             db.session.commit()
             return redirect(url_for("market_page"))
         else:
-            flash('Ekleme sirasinda bir hata olustu. Lutfen tekrar dene',
-                  category='danger')
-            return render_template('hayvan.html', form=form)
-    return render_template('hayvan.html', form=form)
+            flash('Ekleme sırasında bir hata oluştu. Lütfen tekrar deneyin.', category='danger')
+    elif request.method == 'POST':
+        flash('Ekleme sırasında bir hata oluştu. Lütfen tekrar deneyin.', category='danger')
+    return render_template('hayvan.html', form=form)    
 
 @app.route('/randevu/al', methods=['GET', 'POST'])
 @login_required
 def randevu_page():
     form = AppointmentForm()
-    kullanici_hayvanlari = db.engine.execute(
-        "SELECT hnum, isim FROM hayvan WHERE sahip_tc = '{}'".format(current_user.tc)
-    ).fetchall()
+    
+    # Kullanıcının hayvanlarını ve hekimleri al
+    hayvanlar = Hayvan.query.filter_by(sahip_tc=current_user.tc).all()
+    hekimler = Hekim.query.all()
 
-    # Hayvanların hnum ve isimlerini SelectField'in choices kısmına ekle
-    form.hayvanlar.choices = [(hayvan.hnum, hayvan.isim) for hayvan in kullanici_hayvanlari]
-
-    mevcut_hekimler = db.engine.execute("SELECT num, isim, soyisim FROM hekim").fetchall()
-
-    # Hekimlerin id ve isimlerini SelectField'in choices kısmına ekle
-    form.hekimler.choices = [(hekim.num, f"{hekim.isim} {hekim.soyisim}") for hekim in mevcut_hekimler]
-
+    # Dropdown menüler için seçenekleri doldur
+    form.hayvanlar.choices = [(str(hayvan.hnum), hayvan.isim) for hayvan in hayvanlar]
+    form.hekimler.choices = [(str(hekim.num), f"{hekim.isim} {hekim.soyisim}") for hekim in hekimler]
 
     if form.validate_on_submit():
-        try:
-            # notlar sütununa boş bir string ekliyoruz
-            insert = """
-                INSERT INTO randevu (tarih, saat, hayvan_no, hekim_no, notes)
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            db.engine.execute(insert, (form.tarih.data, form.saat.data, form.hayvanlar.data, form.hekimler.data, ''))
-            db.session.commit()
-            flash('Randevu başarıyla alındı!', category='success')
-            return redirect(url_for("market_page"))
-        except Exception as e:
-            flash(f'Randevu eklenirken bir hata oluştu: {e}', category='danger')
+        # Formdan gelen verilerle randevuyu oluştur
+        insert = f"INSERT INTO randevu (tarih, saat, hayvan_no, hekim_no) VALUES ('{form.tarih.data}', '{form.saat.data}', '{form.hayvanlar.data}', '{form.hekimler.data}')"
+        db.engine.execute(insert)
+        db.session.commit()
+        flash('Randevu başarıyla alındı!', category='success')
+        return redirect(url_for("market_page"))
 
     return render_template('al.html', form=form)
 
@@ -217,15 +236,17 @@ def randevu_page():
 @app.route('/randevu/eski')
 @login_required
 def eski_page():
-    randevular = db.session.execute("""
-            SELECT r.saat, r.tarih, h.isim AS hayvan_adi, k.isim AS hekim_adi, k.soyisim AS hekim_soyadi
-            FROM randevu AS r
-            JOIN hayvan AS h ON r.Hayvan_no = h.hnum
-            JOIN hekim AS k ON r.Hekim_no = k.num
-            WHERE h.sahip_tc = :owner_tc
-        """, {'owner_tc': current_user.tc}).fetchall()
+    # Sadece mevcut sahibin randevularını getir
+    randevular = Randevu.query.join(Hayvan).filter(Hayvan.sahip_tc == current_user.tc).all()
+
+    # Hayvan ve Hekim adlarını ekle
+    for randevu in randevular:
+        randevu.hayvan_adi = Hayvan.query.filter_by(hnum=randevu.hayvan_no).first().isim
+        randevu.hekim_adi = Hekim.query.filter_by(num=randevu.hekim_no).first().isim
+        randevu.hekim_soyisim = Hekim.query.filter_by(num=randevu.hekim_no).first().soyisim
 
     return render_template('eski.html', randevular=randevular)
+
 
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -242,6 +263,8 @@ def admin_login():
 
         # Check if user is a Stajyer
         attempted_stajyer = Stajyer.query.filter_by(email=form.email.data).first()
+        print(attempted_stajyer)
+        print(attempted_stajyer.sifre)
         if attempted_stajyer and attempted_stajyer.sifre == form.password.data:
             login_user(attempted_stajyer, remember=True)
             flash(f'Success! You are logged in as: {attempted_stajyer.isim}', category='success')
@@ -259,23 +282,43 @@ def admin_page():
     hekims = Hekim.query.all()
     stajyers = Stajyer.query.all()
 
-    # Determine the user's role
+    # Kullanıcının rolünü belirle
     if isinstance(current_user, Stajyer):
         user_role = 'stajyer'
+
+        # Stajyerin bağlı olduğu hekimin numarasını bul
+        linked_hekim = db.session.query(BAGLIDIR).filter_by(StajerNo=current_user.num).first()
+        linked_hekim_no = linked_hekim.HekimNo if linked_hekim else None
+        print(linked_hekim_no)
     elif isinstance(current_user, Hekim):
         user_role = 'hekim'
+
+        # Hekime bağlı olmayan stajyerleri bul
+        linked_stajyer_nos = [relation.StajerNo for relation in BAGLIDIR.query.all()]
+        unlinked_stajyers = [stajyer.num for stajyer in stajyers if stajyer.num not in linked_stajyer_nos]
     else:
         user_role = 'other'
+        linked_hekim_no = None
+        unlinked_stajyers = []
 
-    # Pass data and user role to the template
-    return render_template('admin.html', user_role=user_role, hekimler=hekims, stajyers=stajyers)
+    # Template'e gerekli verileri gönder
+    return render_template(
+        'admin.html',
+        user_role=user_role,
+        hekimler=hekims,
+        stajyers=stajyers,
+        linked_hekim_no=linked_hekim_no if user_role == 'stajyer' else None,
+        unlinked_stajyers=unlinked_stajyers if user_role == 'hekim' else None
+    )
+
 
 
 @app.route('/admin/hekim', methods=['GET', 'POST'])
 @login_required
 def hekim_page():
     form = HekimForm()
-    if 1:     
+    if form.validate_on_submit():
+        # Maksimum numarayı bul ve yeni numarayı oluştur
         max_num_query = """
         SELECT MAX(num) FROM (
             SELECT num FROM hekim
@@ -284,27 +327,35 @@ def hekim_page():
         ) AS combined
         """
         max_num_result = db.engine.execute(max_num_query).fetchone()
-        new_hekim_num = (int(max_num_result[0]) if max_num_result[0] is not None else 0) + 1  
-        
-        if form.soyisim.data != None:
-            insert = 'insert into hekim values(\'{isim}\',\'{soyisim}\',\'{email}\',\'{sifre}\',{num})'.format(
-                                                                    soyisim = form.soyisim.data,
-                                                                    isim=form.isim.data,
-                                                                    sifre=form.sifre.data,
-                                                                    email=form.email.data,
-                                                                    num=new_hekim_num)
-        
+        new_hekim_num = (int(max_num_result[0]) if max_num_result[0] is not None else 0) + 1
+
+        # Yeni hekimin bilgilerini ekle
+        insert = """
+        INSERT INTO hekim (isim, soyisim, email, sifre, num) 
+        VALUES ('{isim}', '{soyisim}', '{email}', '{sifre}', {num})
+        """.format(
+            isim=form.isim.data,
+            soyisim=form.soyisim.data,
+            email=form.email.data,
+            sifre=form.sifre.data,
+            num=new_hekim_num
+        )
+
+        try:
             db.engine.execute(insert)
             db.session.commit()
+            flash('Hekim başarıyla eklendi.', category='success')
             return redirect(url_for("admin_page"))
-        else:
-            flash('Ekleme sirasinda bir hata olustu. Lutfen tekrar dene',
-                  category='danger')
-            return render_template('hekim.html', form=form)
-    else:
-        flash('Ekleme sirasinda bir hata olustu. Lutfen tekrar dene',
-                  category='danger')
-        return render_template('hekim.html', form=form)
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ekleme sırasında bir hata oluştu: {str(e)}', category='danger')
+
+    elif request.method == 'POST':
+        flash('Form doğrulama hatası: {}'.format(form.errors), category='danger')
+
+    return render_template('hekim.html', form=form)
+
+
     
 
 @app.route('/admin/stajyer', methods=['GET', 'POST'])
@@ -347,7 +398,7 @@ def baglidir_add(stajyer_no):
         return redirect(url_for('admin_page'))
 
     # Check if the stajyer is already linked to any hekim
-    existing_link = BAGLIDIR.query.filter_by(StajyerNo=stajyer_no).first()
+    existing_link = BAGLIDIR.query.filter_by(StajerNo=stajyer_no).first()
     if existing_link:
         # Check if the stajyer is linked to the current user
         if existing_link.HekimNo == current_user.num:
@@ -357,7 +408,7 @@ def baglidir_add(stajyer_no):
         return redirect(url_for('admin_page'))
 
     # Add the relationship
-    new_link = BAGLIDIR(HekimNo=current_user.num, StajyerNo=stajyer_no)
+    new_link = BAGLIDIR(HekimNo=current_user.num, StajerNo=stajyer_no)
     db.session.add(new_link)
     db.session.commit()
     flash('Stajyer başarıyla hekime bağlandı!', category='success')
@@ -386,4 +437,157 @@ def baglidir_remove(hekim_no):
 
 
 
+@app.route('/recete/ekle/<int:hayvan_no>/<int:hekim_no>/<string:tarih>/<string:saat>', methods=['GET', 'POST'])
+@login_required
+def recete_ekle(hayvan_no, hekim_no, tarih, saat):
+    # Convert string parameters back to the appropriate types if needed
+    randevu_tarih = datetime.strptime(tarih, "%Y-%m-%d").date()
+    
+    # Fetch the Randevu based on these details
+    randevu = Randevu.query.filter_by(
+        hayvan_no=hayvan_no,
+        hekim_no=hekim_no,
+        tarih=randevu_tarih,
+        saat=saat
+    ).first_or_404()
+    
+    if request.method == 'POST':
+        # Extract prescription details
+        medications = request.form.get('medications')
+        try:
+            medications_data = json.loads(medications)
+        except json.JSONDecodeError:
+            flash('Lütfen geçerli bir JSON formatı girin.', category='danger')
+            return render_template('recete_ekle.html', randevu=randevu)
+        
+        # Add a new prescription
+        new_recete = RECETE(
+            tarih = randevu_tarih,
+            hayvan_no=hayvan_no,
+            hekim_no=hekim_no,
+            medications=medications_data,
+            status='accepted'
+        )
+        db.session.add(new_recete)
+        db.session.commit()
+        flash('Reçete başarıyla eklendi!', category='success')
+        return redirect(url_for('market_page'))
+    
+    return render_template('recete_ekle.html', randevu=randevu)
 
+
+
+@app.route('/recete_ekle_stajyer/<int:hayvan_no>/<int:hekim_no>', methods=['GET', 'POST'])
+@login_required
+def recete_ekle_stajyer(hayvan_no, hekim_no):
+    # Fetch the randevu
+    randevu = Randevu.query.filter_by(hayvan_no=hayvan_no, hekim_no=hekim_no).first()
+    if not randevu:
+        flash('Randevu bulunamadı.', category='danger')
+        return redirect(url_for('market_page'))
+
+    if request.method == 'POST':
+        # Extract prescription details
+        medications = request.form.get('medications')
+        try:
+            medications_data = json.loads(medications)
+        except json.JSONDecodeError:
+            flash('Lütfen geçerli bir JSON formatı girin. Örnek: {"Parol": "500mg", "Augmentin": "1g"}', category='danger')
+            return render_template('recete_form.html', randevu=randevu, example_json='{"Parol": "500mg", "Augmentin": "1g"}')
+
+        # Add a new prescription
+        new_recete = RECETE(
+            tarih=randevu.tarih,
+            hayvan_no=hayvan_no,
+            hekim_no=hekim_no,
+            stajyer_no=current_user.num,
+            medications=medications_data,
+            status='pending'
+        )
+        db.session.add(new_recete)
+        db.session.commit()
+        flash('Reçete başarıyla eklendi ve beklemede.', category='success')
+        return redirect(url_for('market_page'))
+
+    # Render the form with an example JSON
+    return render_template('recete_form.html', randevu=randevu, example_json='{"Parol": "500mg", "Augmentin": "1g"}')
+
+
+
+
+@app.route('/recete_onay/<int:recete_id>', methods=['POST'])
+@login_required
+def recete_onay(recete_id):
+    action = request.form.get('action')  # "approve" veya "reject"
+    recete = RECETE.query.get_or_404(recete_id)
+
+    # Sadece hekimler bu işlemi yapabilir
+    if not isinstance(current_user, Hekim):
+        flash('Bu işlemi yapma yetkiniz yok.', category='danger')
+        return redirect(url_for('market_page'))
+
+    if action == 'approve':
+        recete.status = 'accepted'
+        flash('Reçete kabul edildi.', category='success')
+    elif action == 'reject':
+        db.session.delete(recete)
+        flash('Reçete reddedildi.', category='danger')
+    else:
+        flash('Geçersiz işlem.', category='warning')
+    
+    db.session.commit()
+    return redirect(url_for('market_page'))
+
+
+
+
+def is_stajyer_linked_to_hekim(stajyer_no, hekim_no):
+    return BAGLIDIR.query.filter_by(StajerNo=stajyer_no, HekimNo=hekim_no).first() is not None
+
+
+@app.route('/hayvan/<int:hayvan_no>', methods=['GET'])
+@login_required
+def hayvan_detay(hayvan_no):
+    # Hayvan bilgilerini al
+    hayvan = Hayvan.query.filter_by(hnum=hayvan_no).first()
+    if not hayvan:
+        flash("Hayvan bulunamadı.", category="danger")
+        return redirect(url_for('eski_page'))
+
+    sahip = Sahip.query.filter_by(tc=hayvan.sahip_tc).first()
+    # Ameliyatlar ve reçeteler
+    ameliyatlar = Ameliyat.query.filter_by(hayvan_no=hayvan_no).all()
+    receteler = RECETE.query.filter_by(hayvan_no=hayvan_no).all()
+
+    # Tıbbi geçmiş
+    tibbi_gecmis = db.engine.execute(
+        f"SELECT * FROM TIBBI_GECMIS WHERE hayvan_no = {hayvan_no}"
+    ).fetchall()
+
+    return render_template(
+        'hayvan_detay.html',
+        hayvan=hayvan,
+        ameliyatlar=ameliyatlar,
+        sahip=sahip,
+        receteler=receteler,
+        tibbi_gecmis=tibbi_gecmis
+    )
+
+
+@app.route('/sonuc_yaz/<int:hayvan_no>', methods=['GET', 'POST'])
+@login_required
+def sonuc_yaz(hayvan_no):
+    form = SonucYazForm()
+    if form.validate_on_submit():
+        # Yeni tıbbi geçmiş kaydı ekleme
+        new_record = TIBBI_GECMIS(
+            hayvan_no=hayvan_no,
+            diagnosis=form.diagnosis.data,
+            treatment=form.treatment.data,
+            visit_date=date.today()  # Bugünün tarihi otomatik eklenir
+        )
+        db.session.add(new_record)
+        db.session.commit()
+        flash('Tıbbi geçmişe yeni sonuç eklendi.', category='success')
+        return redirect(url_for('market_page'))
+    return render_template('sonuc_yaz.html', form=form, hayvan_no=hayvan_no)
