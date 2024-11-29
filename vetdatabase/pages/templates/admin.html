@@ -37,7 +37,7 @@
                 <td>{{ hekim.soyisim }}</td>
                 <td>{{ hekim.email }}</td>
                 <td>
-                    {% if user_role == 'stajyer' %}
+                    {% if user_role == 'stajyer' and linked_hekim_no == hekim.num %}
                     <form method="POST" action="{{ url_for('baglidir_remove', hekim_no=hekim.num) }}">
                         <button type="submit" class="btn btn-outline btn-danger">Hekimden Ayrıl</button>
                     </form>
@@ -68,7 +68,7 @@
                 <td>{{ stajyer.soyisim }}</td>
                 <td>{{ stajyer.email }}</td>
                 <td>
-                    {% if user_role != 'stajyer' %}
+                    {% if user_role == 'hekim' and stajyer.num in unlinked_stajyers %}
                     <form method="POST" action="{{ url_for('baglidir_add', stajyer_no=stajyer.num) }}">
                         <button type="submit" class="btn btn-outline btn-primary">Stajyer Al</button>
                     </form>
