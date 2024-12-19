@@ -10,7 +10,7 @@
 
 ## Installation Guide:
 1- Type the following in your Git Bash
-   git clone https://github.com/Ykpckr/BIL-372-Project.git
+   git clone https://github.com/Ykpckr/BIL-372-Project
 
 2- Open Mysql and create a schema, then paste vet-dataouse_queries.sql and run query
 
