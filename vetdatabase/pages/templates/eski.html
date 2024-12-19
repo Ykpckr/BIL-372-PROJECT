@@ -7,7 +7,7 @@
       <table class="table table-hover table-dark">
         <thead>
             <tr>
-                
+                <!-- Your Columns HERE -->
                 <th scope="col">Saat</th>
                 <th scope="col">Tarih</th>
                 <th scope="col">Hayvan Adı</th>
@@ -15,7 +15,7 @@
             </tr>
         </thead>
         <tbody>
-            
+            <!-- Your rows inside the table HERE: -->
             {%for randevu in randevular%}
             <tr>
                 <td>{{ randevu.saat }}</td>
@@ -26,6 +26,13 @@
                     </a>
                 </td>
                 <td>{{ randevu.hekim_adi}} {{ randevu.hekim_soyisim}}</td>
+                <td>
+                    <a href="{{ url_for('randevu_guncelle', id=randevu.id) }}" class="btn btn-warning">Güncelle</a>
+					<form action="{{ url_for('randevu_sil', id=randevu.id) }}" method="post" style="display:inline;">
+						<button type="submit" class="btn btn-danger">Sil</button>
+					</form>
+
+                </td>
             </tr>
             {%endfor%}
         </tbody>

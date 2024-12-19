@@ -104,10 +104,11 @@ class Hayvan(db.Model,UserMixin):
 
 class Randevu(db.Model,UserMixin):
     __tablename__ = 'randevu'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     tarih = db.Column(db.Date,nullable = False)
     saat = db.Column(db.String(length=5),nullable=False)
-    hayvan_no = db.Column(db.String(length=12),db.ForeignKey('hayvan.hnum'),primary_key = True)
-    hekim_no = db.Column(db.String(length=12), db.ForeignKey('hekim.num') ,primary_key = True)
+    hayvan_no = db.Column(db.String(length=12),db.ForeignKey('hayvan.hnum'))
+    hekim_no = db.Column(db.String(length=12), db.ForeignKey('hekim.num') )
     
     
 
@@ -115,10 +116,11 @@ class Randevu(db.Model,UserMixin):
 
 class Ameliyat(db.Model):
     __tablename__ = 'ameliyat'
-    tarih = db.Column(db.Date, nullable=False, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    tarih = db.Column(db.Date, nullable=False)
     saat = db.Column(db.String(length=5),nullable=False)
-    hayvan_no = db.Column(db.Integer, nullable=False, primary_key=True)
-    hekim_no = db.Column(db.Integer, nullable=False, primary_key=True)
+    hayvan_no = db.Column(db.Integer, nullable=False)
+    hekim_no = db.Column(db.Integer, nullable=False)
     aciklama = db.Column(db.String(255), nullable=True)
 
 

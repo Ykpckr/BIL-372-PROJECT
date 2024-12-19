@@ -557,7 +557,7 @@ def hayvan_detay(hayvan_no):
     sahip = Sahip.query.filter_by(tc=hayvan.sahip_tc).first()
     # Ameliyatlar ve reçeteler
     ameliyatlar = Ameliyat.query.filter_by(hayvan_no=hayvan_no).all()
-    receteler = RECETE.query.filter_by(hayvan_no=hayvan_no).all()
+    receteler = RECETE.query.filter_by(hayvan_no=hayvan_no, status='accepted').all()
 
     # Tıbbi geçmiş
     tibbi_gecmis = db.engine.execute(
@@ -591,3 +591,176 @@ def sonuc_yaz(hayvan_no):
         flash('Tıbbi geçmişe yeni sonuç eklendi.', category='success')
         return redirect(url_for('market_page'))
     return render_template('sonuc_yaz.html', form=form, hayvan_no=hayvan_no)
+
+
+@app.route('/randevu/guncelle/<int:id>', methods=['GET', 'POST'])
+@login_required
+def randevu_guncelle(id):
+    randevu = Randevu.query.get_or_404(id)
+    form = AppointmentForm()
+
+    # Dropdown menüler için hayvanlar ve hekimler
+    hayvanlar = Hayvan.query.filter_by(sahip_tc=current_user.tc).all()
+    hekimler = Hekim.query.all()
+
+    form.hayvanlar.choices = [(str(hayvan.hnum), hayvan.isim) for hayvan in hayvanlar]
+    form.hekimler.choices = [(str(hekim.num), f"{hekim.isim} {hekim.soyisim}") for hekim in hekimler]
+
+    if form.validate_on_submit():
+        randevu.tarih = form.tarih.data
+        randevu.saat = form.saat.data
+        randevu.hayvan_no = int(form.hayvanlar.data)
+        randevu.hekim_no = int(form.hekimler.data)
+        db.session.commit()
+        flash("Randevu başarıyla güncellendi!", category="success")
+        return redirect(url_for('eski_page'))
+
+    # Form varsayılan değerlerini doldur
+    form.tarih.data = randevu.tarih
+    form.saat.data = randevu.saat
+    form.hayvanlar.data = str(randevu.hayvan_no)
+    form.hekimler.data = str(randevu.hekim_no)
+
+    return render_template('guncelle_randevu.html', form=form, randevu=randevu)
+
+
+
+@app.route('/randevu/sil/<int:id>', methods=['POST'])
+@login_required
+def randevu_sil(id):
+    randevu = Randevu.query.get_or_404(id)
+    db.session.delete(randevu)
+    db.session.commit()
+    flash("Randevu başarıyla silindi!", category="success")
+    return redirect(url_for('eski_page'))
+
+@app.route('/admin/hekim/<int:hekim_id>/islem_guncelle', methods=['GET', 'POST'])
+@login_required
+def islem_guncelle(hekim_id):
+    # Hekimi getir
+    hekim = Hekim.query.get_or_404(hekim_id)
+    
+    # Hekimin yaptığı ameliyatları, reçeteleri ve sonuçları al
+    ameliyatlar = Ameliyat.query.filter_by(hekim_no=hekim.num).all()
+    receteler = RECETE.query.filter_by(hekim_no=hekim.num).all()
+    sonuclar = TIBBI_GECMIS.query.filter_by().all()  # TIBBI_GECMIS uygun filtre ekleyin
+
+    return render_template('islem_guncelle.html', hekim=hekim, ameliyatlar=ameliyatlar, receteler=receteler, sonuclar=sonuclar)
+
+@app.route('/ameliyat/<int:ameliyat_id>/guncelle', methods=['GET', 'POST'])
+@login_required
+def ameliyat_guncelle(ameliyat_id):
+    ameliyat = Ameliyat.query.get_or_404(ameliyat_id)
+
+    if request.method == 'POST':
+        ameliyat.tarih = request.form.get('tarih')
+        ameliyat.saat = request.form.get('saat')
+        ameliyat.aciklama = request.form.get('description')
+        db.session.commit()
+        flash('Ameliyat başarıyla güncellendi.', category='success')
+        return redirect(url_for('islem_guncelle', hekim_id=ameliyat.hekim_no))
+
+    return render_template('ameliyat_guncelle.html', ameliyat=ameliyat)
+
+@app.route('/ameliyat/<int:ameliyat_id>/sil', methods=['POST'])
+@login_required
+def ameliyat_sil(ameliyat_id):
+    ameliyat = Ameliyat.query.get_or_404(ameliyat_id)
+    db.session.delete(ameliyat)
+    db.session.commit()
+    flash('Ameliyat başarıyla silindi.', category='success')
+    return redirect(url_for('islem_guncelle', hekim_id=ameliyat.hekim_no))
+
+
+@app.route('/recete/<int:recete_id>/guncelle', methods=['GET', 'POST'])
+@login_required
+def recete_guncelle(recete_id):
+    recete = RECETE.query.get_or_404(recete_id)
+
+    # Kullanıcının rolünü belirle
+    if isinstance(current_user, Stajyer):
+        user_role = 'stajyer'
+    elif isinstance(current_user, Hekim):
+        user_role = 'hekim'
+    else:
+        user_role = None
+
+    if request.method == 'POST':
+        recete.tarih = request.form.get('tarih')
+        medications = request.form.get('medications')
+        try:
+            recete.medications = json.loads(medications)
+        except json.JSONDecodeError:
+            flash('Lütfen geçerli bir JSON formatı girin. Örnek: {"Parol": "500mg", "Augmentin": "1g"}', category='danger')
+            return render_template('recete_guncelle.html', recete=recete)
+
+        db.session.commit()
+        flash('Reçete başarıyla güncellendi.', category='success')
+
+        # Kullanıcının rolüne göre yönlendirme
+        if user_role == 'stajyer':
+            return redirect(url_for('stajyer_islem_guncelle', stajyer_id=current_user.num))
+        elif user_role == 'hekim':
+            return redirect(url_for('islem_guncelle', hekim_id=recete.hekim_no))
+
+    return render_template('recete_guncelle.html', recete=recete)
+
+
+@app.route('/recete/<int:recete_id>/sil', methods=['POST'])
+@login_required
+def recete_sil(recete_id):
+    if isinstance(current_user, Stajyer):
+        user_role = 'stajyer'
+    elif isinstance(current_user, Hekim):
+        user_role = 'hekim'
+    else:
+        user_role = None
+    recete = RECETE.query.get_or_404(recete_id)
+    
+    # Kullanıcının stajyer olup olmadığını kontrol et
+    if user_role == 'stajyer':  # Role kontrolü için varsayılan bir sütun 'role' örnek olarak alınmıştır
+        redirect_url = url_for('stajyer_islem_guncelle', stajyer_id=current_user.num)
+    else:
+        redirect_url = url_for('islem_guncelle', hekim_id=recete.hekim_no)
+    
+    db.session.delete(recete)
+    db.session.commit()
+    flash('Reçete başarıyla silindi.', category='success')
+    return redirect(redirect_url)
+
+
+
+@app.route('/sonuc/<int:sonuc_id>/guncelle', methods=['GET', 'POST'])
+@login_required
+def sonuc_guncelle(sonuc_id):
+    sonuc = TIBBI_GECMIS.query.get_or_404(sonuc_id)
+
+    if request.method == 'POST':
+        sonuc.visit_date = request.form.get('visit_date')
+        sonuc.diagnosis = request.form.get('diagnosis')
+        sonuc.treatment = request.form.get('treatment')
+        db.session.commit()
+        flash('Sonuç başarıyla güncellendi.', category='success')
+        return redirect(url_for('islem_guncelle', hekim_id=current_user.num))
+
+    return render_template('sonuc_guncelle.html', sonuc=sonuc)
+
+
+
+@app.route('/sonuc/<int:sonuc_id>/sil', methods=['POST'])
+@login_required
+def sonuc_sil(sonuc_id):
+    sonuc = TIBBI_GECMIS.query.get_or_404(sonuc_id)
+    db.session.delete(sonuc)
+    db.session.commit()
+    flash('Sonuç başarıyla silindi.', category='success')
+    return redirect(url_for('islem_guncelle', hekim_id=current_user.num))
+
+
+@app.route('/admin/stajyer_islem_guncelle/<int:stajyer_id>', methods=['GET', 'POST'])
+@login_required
+def stajyer_islem_guncelle(stajyer_id):
+    # İlgili stajyerin reçetelerini getir
+    receteler = RECETE.query.filter_by(stajyer_no=stajyer_id, status='pending').all()
+    
+    return render_template('stajyer_islem_guncelle.html', receteler=receteler)

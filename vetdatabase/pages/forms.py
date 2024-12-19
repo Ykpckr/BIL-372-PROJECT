@@ -105,7 +105,7 @@ class HekimForm(FlaskForm):
     soyisim = StringField(label="Soyisim: ", validators=[DataRequired(message="Soyisim zorunludur."), Length(min=2, max=50, message="Soyisim en az 2, en fazla 50 karakter olmalıdır.")])
     email = StringField(label='Email:', validators=[Email(message="Geçerli bir email adresi giriniz."), DataRequired(message="Email adresi zorunludur.")])
     sifre = PasswordField(label='Sifre:', validators=[Length(min=6, message="Şifre en az 6 karakter olmalıdır."), DataRequired(message="Şifre zorunludur.")])
-    sifre2 = PasswordField(label='Sifre Tekrar:', validators=[EqualTo('password1', message="Şifreler eşleşmelidir."), DataRequired(message="Şifre tekrarı zorunludur.")])
+    sifre2 = PasswordField(label='Sifre Tekrar:', validators=[EqualTo('sifre', message="Şifreler eşleşmelidir."), DataRequired(message="Şifre tekrarı zorunludur.")])
     submit = SubmitField(label='Hekim Ekle')
 
 class HekimLoginForm(FlaskForm):
@@ -128,7 +128,7 @@ class StajyerForm(FlaskForm):
     soyisim = StringField(label="Soyisim: ", validators=[DataRequired(message="Soyisim zorunludur."), Length(min=2, max=50, message="Soyisim en az 2, en fazla 50 karakter olmalıdır.")])
     email = StringField(label='Email:', validators=[Email(message="Geçerli bir email adresi giriniz."), DataRequired(message="Email adresi zorunludur.")])
     sifre = PasswordField(label='Sifre:', validators=[Length(min=6, message="Şifre en az 6 karakter olmalıdır."), DataRequired(message="Şifre zorunludur.")])
-    sifre2 = PasswordField(label='Sifre Tekrar:', validators=[EqualTo('password1', message="Şifreler eşleşmelidir."), DataRequired(message="Şifre tekrarı zorunludur.")])
+    sifre2 = PasswordField(label='Sifre Tekrar:', validators=[EqualTo('sifre', message="Şifreler eşleşmelidir."), DataRequired(message="Şifre tekrarı zorunludur.")])
     submit = SubmitField(label='Stajyer Ekle')
 
 class ReceteForm(FlaskForm):

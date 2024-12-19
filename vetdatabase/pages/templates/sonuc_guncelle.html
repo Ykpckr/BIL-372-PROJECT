@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}
+    Sonuç Güncelle
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Sonuç Güncelle</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="visit_date">Tarih</label>
+            <input type="date" class="form-control" id="visit_date" name="visit_date" value="{{ sonuc.visit_date }}">
+        </div>
+        <div class="form-group">
+            <label for="diagnosis">Teşhis</label>
+            <textarea class="form-control" id="diagnosis" name="diagnosis">{{ sonuc.diagnosis }}</textarea>
+        </div>
+        <div class="form-group">
+            <label for="treatment">Tedavi</label>
+            <textarea class="form-control" id="treatment" name="treatment">{{ sonuc.treatment }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Güncelle</button>
+    </form>
+</div>
+{% endblock %}

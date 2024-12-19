@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}
+    Randevu Güncelle
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Randevuyu Güncelle</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.tarih.label }} {{ form.tarih(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.saat.label }} {{ form.saat(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.hayvanlar.label }} {{ form.hayvanlar(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.hekimler.label }} {{ form.hekimler(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-success">Kaydet</button>
+        <a href="{{ url_for('eski_page') }}" class="btn btn-secondary">İptal</a>
+    </form>
+</div>
+{% endblock %}

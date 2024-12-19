@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}
+    Stajyer İşlem Güncelle
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Stajyer Reçeteleri</h2>
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <th scope="col">Reçete ID</th>
+                <th scope="col">Tarih</th>
+                <th scope="col">Medications</th>
+                <th scope="col">Durum</th>
+                <th scope="col">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for recete in receteler %}
+            <tr>
+                <td>{{ recete.id }}</td>
+                <td>{{ recete.tarih }}</td>
+                <td>{{ recete.medications }}</td>
+                <td>{{ recete.status }}</td>
+                <td>
+                    <a href="{{ url_for('recete_guncelle', recete_id=recete.id) }}" class="btn btn-outline btn-warning btn-sm">Güncelle</a>
+                    <form method="POST" action="{{ url_for('recete_sil', recete_id=recete.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-outline btn-danger btn-sm">Sil</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

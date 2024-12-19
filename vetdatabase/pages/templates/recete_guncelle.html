@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}
+    Reçete Güncelle
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Reçete Güncelle</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="tarih">Tarih</label>
+            <input type="date" class="form-control" id="tarih" name="tarih" value="{{ recete.tarih }}">
+        </div>
+        <div class="form-group">
+            <label for="medications">İlaçlar (JSON Formatı)</label>
+            <textarea class="form-control" id="medications" name="medications">{{ recete.medications }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Güncelle</button>
+    </form>
+</div>
+{% endblock %}
